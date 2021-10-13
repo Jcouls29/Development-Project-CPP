@@ -1,0 +1,15 @@
+---
+BasedOnStyle:                LLVM
+IndentWidth:                 4
+TabWidth:                    4
+UseTab:                      ForIndentation
+AlignConsecutiveAssignments: true
+---
+Language:    Cpp
+ColumnLimit: 80
+IncludeBlocks: Preserve
+---
+Language:              JavaScript
+ColumnLimit:           100
+JavaScriptWrapImports: true
+JavaScriptQuotes:      Single
