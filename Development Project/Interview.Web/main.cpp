@@ -27,6 +27,9 @@
 #include "evHttpResponse.hpp"
 #include "middlewares.hpp"
 
+#include "inventory.h"
+#include "product.h"
+
 using iti::http::Request;
 using iti::http::Response;
 using iti::http::StatusCode;
@@ -147,8 +150,16 @@ int main() {
 			// * pull products from the database
 			// * limit?
 			// * paginate?
+
+			// note from Greg - Obviously, I need to study up on http request handling.
+			// I do not know how to implement a web API yet.  Most of the code I wrote was
+			// for handling data for this project.
+
+			inventory inv;
+			auto products = inv.getProducts();
 			json j;
-			j["products"] = json::array();
+			j["products"] = products[0].toJson();
+			//j["products"] = json::array();
 			resp.write(j.dump(4));
 		});
 		r->with(middlewares::extract_id)
