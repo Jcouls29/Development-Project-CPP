@@ -16,7 +16,7 @@ void inventory::initConnString() {
 
     connString = cfg.GetConnectionString();
     // fake connection string for testing on a dev machine
-    connString = "DRIVER={SQL Server};SERVER=localhost,1433;DATABASE=Instances;UID=gsuing;PWD=dogmeat";
+    connString = "DRIVER={SQL Server};SERVER=localhost,1433;DATABASE=Instances;UID=gsuing;PWD=CreightonBluejays";
 }
 
 bool inventory::connectDb() {

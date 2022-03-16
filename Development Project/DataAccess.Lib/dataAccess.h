@@ -11,6 +11,11 @@
 
 class recordSet;
 
+/*
+ *   This is a simple data access object implementation with no security.
+ *   Hard-coded credentials, no XSS prevention.
+ */
+
 class dataAccess {
 public:
 	dataAccess();
