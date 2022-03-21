@@ -19,14 +19,7 @@ void product::setAttributes(const attrMap &_attributes) {
     attributes = _attributes;
 }
 
-product product::getProduct(const int instanceId) {
-	product prod("name", "desc", "uri", "sku");
-
-
-    return prod; 
-}
-
-json product::toJson() const {
+json product::to_json() const {
     json j;
 
     j["instanceId"] = instanceId;

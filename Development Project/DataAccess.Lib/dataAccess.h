@@ -22,7 +22,7 @@ public:
 
     bool connect(std::string& connectionString);
 	void disconnect();
-	bool execQuery(std::string &query, std::optional<recordSet> results);
+	bool execQuery(std::string &query, std::optional<recordSet *> results);
 
 private:
 	static const int SQL_RETURN_CODE_LEN {1024+1};
@@ -31,6 +31,6 @@ private:
     SQLHANDLE stmtHandle = nullptr;
     SQLHANDLE envHandle  = nullptr;
 
-    bool getQueryResult(recordSet& results);
+    bool getQueryResult(recordSet *results);
 };
 

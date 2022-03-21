@@ -120,6 +120,26 @@ static void evHttpHandleRequest(struct evhttp_request *req, void *pRouter) {
 	    }));
 }
 
+// helper function to enable/disable products in inventory
+void enableProduct(const Request& req, Response& resp, const inventoryCtrl ctrl)
+{
+	resp.header.set("Content-Type", "text/html; charset=UTF-8");
+
+	long long id;
+	req.context.try_get_value("id", id);
+
+	inventory inv;
+	product prod("", "", "", "");
+	prod.setInstanceId(static_cast<int>(id));
+	auto prods = inv.enableProduct(prod, ctrl);
+
+	std::string respMsg;
+	respMsg = fmt::format("<h1>product {} {} inventory</h1>", id,
+		(ctrl == inventoryCtrl::Add ? "added to" : "removed from"));
+
+	resp.write(respMsg);
+}
+
 // primary application entry point
 int main() {
 	// get the HTTP server running
@@ -141,6 +161,14 @@ int main() {
 		resp.write("Hello from main.cpp");
 	});
 
+	/*
+	* POST requests causes a crash *sigh*
+	router->post("/api/v1/create", [](const Request& req, Response& resp) {
+			resp.header.set("Content-Type", "text/html; charset=UTF-8");
+			resp.write("<h1>product added</h1>");
+	});
+	*/
+
 	// API routes for "products" resource
 	router->route("/api/v1/products", [](std::shared_ptr<IRouter> r) {
 		r->get("/", [](const Request &req, Response &resp) {
@@ -158,7 +186,8 @@ int main() {
 			inventory inv;
 			auto products = inv.getProducts();
 			json j;
-			j["products"] = products[0].toJson();
+			for (auto p : products)
+				j["products"].push_back(p.to_json());
 			//j["products"] = json::array();
 			resp.write(j.dump(4));
 		});
@@ -171,14 +200,40 @@ int main() {
 
 			    // TODO:
 			    // pull product from the database
-			    json product;
-			    product["id"]   = id;
-			    product["name"] = fmt::format("Fake Product {:d}", id);
+				inventory inv;
+				product prod("", "", "", "");
+				std::vector<int> cat;
+				attrMap att;
+				prod.setInstanceId(static_cast<int>(id));
+				auto prods = inv.searchProduct(prod, cat, att);
 
-			    json j;
-			    j["product"] = product;
-			    resp.write(j.dump(4));
-		    });
+			    json product;
+
+				if (prods.empty()) {
+					resp.write("No products found matching the search criteria.");
+				} else {
+					product["id"] = prods[0].getInstanceId();
+					product["name"] = prods[0].getName();
+					json j;
+					j["product"] = product;
+					resp.write(j.dump(4));
+				}
+
+//			    product["id"]   = id;
+//			    product["name"] = fmt::format("Fake Product {:d}", id);
+			});
+	});
+	router->route("/api/v1/add", [](std::shared_ptr<IRouter> r) {
+		r->with(middlewares::extract_id)
+			->put("/{id:[\\d]+}", [](const Request& req, Response& resp) {
+				enableProduct(req, resp, inventoryCtrl::Add);
+			});
+	});
+	router->route("/api/v1/rem", [](std::shared_ptr<IRouter> r) {
+		r->with(middlewares::extract_id)
+			->put("/{id:[\\d]+}", [](const Request& req, Response& resp) {
+				enableProduct(req, resp, inventoryCtrl::Remove);
+			});
 	});
 
 	// create event base and http server

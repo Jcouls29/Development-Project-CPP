@@ -14,9 +14,9 @@ inventory::inventory() {
 void inventory::initConnString() {
 	CfgService &cfg = CfgService::GetInstance();
 
-    connString = cfg.GetConnectionString();
+    //connString = cfg.GetConnectionString();
     // fake connection string for testing on a dev machine
-    connString = "DRIVER={SQL Server};SERVER=localhost,1433;DATABASE=Instances;UID=gsuing;PWD=CreightonBluejays";
+    connString = "DRIVER={SQL Server};SERVER=localhost,1433;DATABASE=Instances;UID=gsuing;PWD=dogmeat";
 }
 
 bool inventory::connectDb() {
@@ -69,13 +69,6 @@ std::vector<product> inventory::getProducts() {
 		disconnectDb();
 	}
 
-	// make some fake data
-
-	productsInInventory.emplace_back("guitar", "musical instrument",
-	                                 "http://products.com/guitar.png", "123");
-    productsInInventory.emplace_back("wine", "alcohol", "http://products.com/wine.png", "124");
-	productsInInventory.emplace_back("pillow", "housewares", "http://products.com/pillow.png", "125");
-
 	return productsInInventory;
 }
 
@@ -99,13 +92,13 @@ inventory::searchProduct(product &prod, const std::vector<int> &categories,
 }
 
 // add/remove product from inventory
-bool inventory::enableProduct(product &prod, const bool enable) {
+bool inventory::enableProduct(product &prod, const inventoryCtrl ctrl) {
 	bool result{ false };
 
 	if (connectDb()) {
 		try {
 			productDao pdao;
-			result = pdao.productInInventory(prod, enable, dao);
+			result = pdao.productInInventory(prod, ctrl == inventoryCtrl::Add, dao);
 		} catch (std::exception &e) {
 			std::cerr << e.what() << std::endl;
 		}

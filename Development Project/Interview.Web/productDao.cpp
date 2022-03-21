@@ -8,6 +8,8 @@
 
 using namespace std::literals::string_literals;
 
+const auto whereStr = std::string{" WHERE "};
+const auto whereLen = whereStr.length();
 
 // add a new product, dao is connected to the database at entry
 bool productDao::add(product &prod, dataAccess &dao) { 
@@ -22,7 +24,7 @@ bool productDao::add(product &prod, dataAccess &dao) {
 				prod.name, prod.description, prod.imageUri, prod.sku);
 
 	recordSet results;
-	dao.execQuery(query, results);
+	dao.execQuery(query, &results);
 	prod.setInstanceId(std::stoi(results.getData(0, "InstanceID")));
 
 	// TODO: insert associated categories and attributes
@@ -48,7 +50,7 @@ std::vector<product> productDao::getProducts(dataAccess &dao) {
 			  WHERE pa.[Key]='inInventory' and pa.[Value]='Yes')";
 
 	recordSet results;
-	dao.execQuery(query, results);
+	dao.execQuery(query, &results);
 
 	productDao pdao;
 
@@ -66,7 +68,7 @@ productDao::searchProduct(product &prod, const std::vector<int> &categories,
 	std::vector<product> products;
 
 	std::string query =
-	    R"(SELECT p.[InstanceId],p.[Name], p.[Description], p.[ProductImageUris], p.[ValidSkus]
+	    R"(SELECT DISTINCT p.[InstanceId],p.[Name], p.[Description], p.[ProductImageUris], p.[ValidSkus]
 			FROM [dbo].[Products] as p
 			JOIN [dbo].[ProductCategories] AS pc ON p.instanceid = pc.instanceid
 			JOIN [dbo].[Categories] AS c ON pc.categoryinstanceID = c.instanceid
@@ -74,23 +76,27 @@ productDao::searchProduct(product &prod, const std::vector<int> &categories,
 			AND pa.[Key] = 'inInventory' AND pa.[Value]='Yes')";
 
 	std::stringstream where;
-	where << " WHERE "; // length = 7
+	where << whereStr;
 
 	// set product search criteria for non-empty product fields
+	if (prod.instanceId != 0) {
+		where << "p.[InstanceId] = " << prod.instanceId;
+	}
 	if (prod.name.length() > 0) {
+		where << (where.str().length() > whereLen) ? L" AND " : L"";
 		where << "p.[Name] = " << prod.name;
 	}
 	if (prod.description.length() > 0) {
-		where << (where.str().length() > 7) ? " AND " : "";
+		where << (where.str().length() > whereLen) ? L" AND " : L"";
 		where << "p.[Description] = " << prod.description;
 	}
 	if (prod.sku.length() > 0) {
-		where << (where.str().length() > 7) ? " AND " : "";
-		where << "p.[ValidSkus] = " << prod.sku;
+		where << (where.str().length() > whereLen) ? L" AND " : L"";
+		where << L"p.[ValidSkus] = " << prod.sku;
 	}
 	// add any category IDs to the query
 	if (!categories.empty()) {
-		where << (where.str().length() > 7) ? " AND pc.[Categories].categoryinstanceId IN (" : ""; 
+		where << (where.str().length() > whereLen) ? " AND pc.[Categories].categoryinstanceId IN (" : "";
 		for (auto id : categories) {
 			where << id;
 			if (id == categories.back()) {
@@ -103,12 +109,12 @@ productDao::searchProduct(product &prod, const std::vector<int> &categories,
 	// add any attributes to the query
 	// TODO: implement attribute clause
 
-	if (where.str().length() > 7) {
+	if (where.str().length() > whereLen) {
 		query += where.str();
 	}
 
 	recordSet results;
-	dao.execQuery(query, results);
+	dao.execQuery(query, &results);
 
 	productDao pdao;
 
@@ -128,7 +134,7 @@ int productDao::getProductCount(product &prod, dataAccess &dao) {
 		prod.instanceId);
 
 	recordSet results;
-	dao.execQuery(query, results);
+	dao.execQuery(query, &results);
 
 	if (results.getCount() > 0) {
 		count = std::stoi(results.getData(0, "Value"));
@@ -180,13 +186,14 @@ bool productDao::setAttribute(product &prod, prodAttr &attr, dataAccess &dao) {
 
 // create a product object from a recordSet row
 product productDao::productFromRow(const int row, recordSet &rs) { 
-	int id {std::stoi(rs.getData(row, "InstanceID"))};
-	std::string name{rs.getData(row, "name")};
-	std::string desc{rs.getData(row, "description")};
-	std::string imageUri{rs.getData(row, "imageUri")};
-	std::string sku{rs.getData(row, "sku")};
 
-	product prod(name, desc, imageUri, sku);
+	product prod(
+		rs.getData(row, "Name"),
+		rs.getData(row, "Description"),
+		rs.getData(row, "ProductImageUris"),
+		rs.getData(row, "ValidSkus"));
+
+	int id{ std::stoi(rs.getData(row, "InstanceId")) };
 	prod.setInstanceId(id);
 
 	return prod;

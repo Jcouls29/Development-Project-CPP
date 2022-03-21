@@ -20,14 +20,13 @@ public:
 
 	~product() = default;
 
+	int getInstanceId() const { return instanceId; }
+	std::string getName() const { return name; }
 	void setInstanceId(const int id);
 	void setCategories(const std::vector<int>& _categories);
 	void setAttributes(const attrMap &_attributes);
 
-	product getProduct(const int instanceId);
-	std::vector<product> getProducts();
-
-	json toJson() const;	
+	json to_json() const;	
 
 private:
 	friend class productDao;

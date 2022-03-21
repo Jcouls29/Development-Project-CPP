@@ -1,12 +1,13 @@
+#include <stdexcept>
 #include "recordSet.h"
 
 std::string recordSet::getData(const int row, const std::string column) {
 
-    // TODO: get data from row and column in record set
+	if (row < 0 || row >= static_cast<int>(records.size()))
+		throw std::out_of_range("invalid row index: " + row);
 
-    // get column info using SQLDescribeCol
+	if (columnMap.find(column) == columnMap.end())
+		throw std::out_of_range("invalid column name: " + column);
 
-    // throw on invalid row index or bad column name
-
-	return "TODO: recordSet::getData()";
+	return records[row][columnMap[column]];
 }
